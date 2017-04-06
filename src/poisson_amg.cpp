@@ -111,19 +111,14 @@ int main(int argc, char *argv[])
 
     // Recover x:
     a->RecoverFEMSolution(X, *b, x);
-    {
-      ostringstream mesh_name, sol_name;
-      mesh_name << "AMGmesh." << setfill('0') << setw(6) << myid;
-      sol_name << "AMGsol." << setfill('0') << setw(6) << myid;
-
-      ofstream mesh_ofs(mesh_name.str().c_str());
-      mesh_ofs.precision(8);
-      pmesh->Print(mesh_ofs);
-
-      ofstream sol_ofs(sol_name.str().c_str());
-      sol_ofs.precision(8);
-      x.Save(sol_ofs);
-    }
+    
+    // Save:
+    ostringstream fname;
+    fname << "poissonAMG" << setfill('0') << setw(4) << myid << ".vtk";
+    ofstream amg_sol_ofs(fname.str().c_str());
+    amg_sol_ofs.precision(8);
+    pmesh->PrintVTK(amg_sol_ofs, 1, 2);
+    x.SaveVTK(amg_sol_ofs, "solution", 1);
     // Free used memory:
     delete pcg;
     delete amg;
