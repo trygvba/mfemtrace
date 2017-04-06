@@ -1,7 +1,7 @@
 // Program for solving Poisson's equation with 
 // BoomerAMG preconditioning CGM.
 // Run with e.g.:
-//      mpirun -np 4 poissonAMG 
+//      mpirun -np 4 ./poissonAMG 
 
 #include "mfem.hpp"
 #include <fstream>
@@ -61,6 +61,78 @@ int main(int argc, char *argv[])
             pmesh->UniformRefinement();
         }
     }
-    cout << "OK in process: " << myid << endl;
+    // Define Finite Element spaces:
+    FiniteElementCollection *fec;
+    fec = new H1_FECollection(order, dim);
+    ParFiniteElementSpace *fespace = new ParFiniteElementSpace(pmesh, fec);
+    HYPRE_Int size = fespace->GlobalTrueVSize();
+    if (myid == 0){
+        cout << "Number of finite element unknowns: " << size << endl;
+    }
+    
+    // Determine list of BC dofs:
+    Array<int> ess_tdof_list;
+    if (pmesh->bdr_attributes.Size()){
+        Array<int> ess_bdr(pmesh->bdr_attributes.Max());
+        ess_bdr = 1;
+        fespace->GetEssentialTrueDofs(ess_bdr, ess_tdof_list);
+    }
+
+    // Set up linear RHS:
+    ParLinearForm *b = new ParLinearForm(fespace);
+    ConstantCoefficient one(1.0);
+    b->AddDomainIntegrator(new DomainLFIntegrator(one));
+    b->Assemble();
+
+    // Define solution vector:
+    ParGridFunction x(fespace);
+    x = 0.0;
+    
+    // Set up bilinear form:
+    ParBilinearForm *a = new ParBilinearForm(fespace);
+    a->AddDomainIntegrator(new DiffusionIntegrator(one));
+    a->Assemble();
+    
+    HypreParMatrix A;
+    Vector B, X;
+    a->FormLinearSystem(ess_tdof_list, x, *b, A, X, B);
+
+    if (myid == 0){
+        cout << "Size of linear system: " << A.GetGlobalNumRows() << endl;
+    }
+
+    // Define parallel PCG:
+    HypreSolver *amg = new HypreBoomerAMG(A);
+    HyprePCG *pcg = new HyprePCG(A);
+    pcg->SetTol(1e-12);
+    pcg->SetMaxIter(200);
+    pcg->SetPreconditioner(*amg);
+    pcg->Mult(B,X);
+
+    // Recover x:
+    a->RecoverFEMSolution(X, *b, x);
+    {
+      ostringstream mesh_name, sol_name;
+      mesh_name << "AMGmesh." << setfill('0') << setw(6) << myid;
+      sol_name << "AMGsol." << setfill('0') << setw(6) << myid;
+
+      ofstream mesh_ofs(mesh_name.str().c_str());
+      mesh_ofs.precision(8);
+      pmesh->Print(mesh_ofs);
+
+      ofstream sol_ofs(sol_name.str().c_str());
+      sol_ofs.precision(8);
+      x.Save(sol_ofs);
+    }
+    // Free used memory:
+    delete pcg;
+    delete amg;
+    delete a;
+    delete b;
+    delete fespace;
+    delete fec;
+    delete pmesh;
+
+    MPI_Finalize();
     return 0;
 }
