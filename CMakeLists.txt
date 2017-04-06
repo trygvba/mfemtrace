@@ -30,7 +30,7 @@ set_target_properties(HYPRE PROPERTIES
 # add METIS library:
 add_library(METIS STATIC IMPORTED)
 set_target_properties(METIS PROPERTIES
-    IMPORTED_LOCATION $ENV{METIS_DIR}/libmetis.a)
+    IMPORTED_LOCATION $ENV{METIS_DIR}/build/Linux-x86_64/libmetis/libmetis.a)
 
 # add MFEM library:
 add_library(MFEM STATIC IMPORTED)
