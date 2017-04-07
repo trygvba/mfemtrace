@@ -44,3 +44,7 @@ target_link_libraries (poisson MFEM HYPRE METIS ${MPI_CXX_LIBRARIES})
 # Create executable for Parallelized Poisson with Hypre AMG solver:
 add_executable(poissonAMG src/poisson_amg.cpp)
 target_link_libraries (poissonAMG MFEM HYPRE METIS ${MPI_CXX_LIBRARIES})
+
+# Mixed Darcy:
+add_executable(mixedDarcy src/mixed_darcy.cpp)
+target_link_libraries (mixedDarcy MFEM HYPRE METIS ${MPI_CXX_LIBRARIES})
