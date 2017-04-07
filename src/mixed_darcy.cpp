@@ -128,6 +128,7 @@ int main(int argc, char *argv[]){
 
     BlockDiagonalPreconditioner darcyPrec(block_offsets);
     darcyPrec.SetDiagonalBlock(0, invM);
+    darcyPrec.SetDiagonalBlock(1, invS);
 
     // Solve with MINRES:
     int maxIter(1000);
