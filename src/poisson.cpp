@@ -32,10 +32,19 @@ int main(int argc, char *argv[]){
     // Refine mesh:
     {
         int ref_levels =
-            (int)floor(log(50000./mesh->GetNE())/log(2.)/dim);
+            (int)floor(log(1000./mesh->GetNE())/log(2.)/dim);
         for (int l = 0; l < ref_levels; l++){
             mesh->UniformRefinement();
         }
+    }
+
+    // Print edges:
+    cout << "Number of edges: " << mesh->GetNEdges() << endl;
+    Array<int> e;
+    Table *edges = mesh->GetEdgeVertexTable();
+    for (int l=0; l<mesh->GetNEdges(); l++){
+        mesh->GetEdgeVertices(l, e);
+        cout << "Edge #" << l << ": (" << e[0] << ", " << e[1] << ")" << endl; 
     }
 
     // Define Finite Element space:
